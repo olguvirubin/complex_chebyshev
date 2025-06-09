@@ -1,7 +1,11 @@
 from numpy import vectorize,diag,array,arange,hstack
 from mpmath import mp
 
-def mpRoots(L,N,symmetry=1):
+def Roots(L,N,symmetry=1):
+    mp_type = L.dtype=='O'
+    if mp_type==False:
+        dps1 = mp.dps
+        mp.dps = 16
     n = symmetry
     m = N//n
     l = N%n
@@ -16,4 +20,7 @@ def mpRoots(L,N,symmetry=1):
     e = e.ravel()
     e = hstack([e,l*[0]])
 
+    if mp_type==False:
+        mp.dps = dps1
+        e = e.astype(complex)    
     return e

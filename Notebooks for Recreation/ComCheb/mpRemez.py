@@ -2,11 +2,26 @@ from mpmath import mp
 from numpy import arange,hstack,vstack,ones,array,argmax,argmin,sort,ndarray,vectorize
 
 from IPython.display import clear_output
+from IPython import get_ipython
 from matplotlib.pyplot import figure,plot as pltplot ,subplot,tight_layout,yscale,scatter
 
 from pandas import DataFrame
 
 from ComCheb.Cheby import Cheby
+
+def __is_called_from_notebook():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter Notebook or JupyterLab
+        elif shell == 'TerminalInteractiveShell':
+            return False  # IPython terminal
+        else:
+            return False  # Other types (e.g., script)
+    except NameError:
+        return False      # Probably standard Python interpreter (e.g., CLI script)
+
+
 
 def __A(z,a,gamma,m,n,l,rc):
     exp    = vectorize(mp.exp)
@@ -111,8 +126,8 @@ def __remez_ex(m,n,l,t,a,r,gamma,samples=1001,reps=5,prec=1e-15,rc=False):
     
     return t,a,r,L,max_div,h,phi
 
-def mpRemez(gamma,N,t=None,a=None,symmetry = 1,rc=False,prec=1e-10,Mmax=100,
-            samples=1001,reps=5,plot=True,pinfo = True):
+def mpRemez(gamma,N,t=None,a=None,symmetry = 1,rc=False,prec=1e-10,maxit=100,
+            samples=1001,reps=10,plot=False,pinfo = False):
     '''Performs Tangs algorithm for the given contour.
     Input:
     ------
@@ -128,7 +143,7 @@ def mpRemez(gamma,N,t=None,a=None,symmetry = 1,rc=False,prec=1e-10,Mmax=100,
         symmetry : integer; describes the symmetry factor. (n-regular polygon has symm. factor of n)
         rc       : bool; (default False) enable this setting if the coefficients are real. (speed up)
         prec     : float; wanted threshold for tangs algorithm.
-        Mmax     : integer; number of maximum iterations.
+        maxit    : integer; number of maximum iterations.
         samples  : integer; number of inital samples for computing maximum norm
         reps     : integer; number of refinements for computing maximum norm. Rule of thumb, set
                    it bigger or equal to -log10(prec).
@@ -144,7 +159,7 @@ def mpRemez(gamma,N,t=None,a=None,symmetry = 1,rc=False,prec=1e-10,Mmax=100,
         L        : 1D numpy array; cofficients of the polynomial Qm given by T_N(z)=z^lQm(z^n),
                    while T_N describes the Chebyshev polynomial of order N = nm+l.
         max_div  : float; maximum deviation of final approximation.
-        phi      : function; best order N-1 Chebyshev approxiamtion of z^N.
+        rel_err  : float; relative error w.r.t. Tang's algorithm.
     '''
     if type(N)==type(t)==type(a)==type(None):
         print("'n','t','a' must not all be 'None'!")
@@ -195,29 +210,39 @@ def mpRemez(gamma,N,t=None,a=None,symmetry = 1,rc=False,prec=1e-10,Mmax=100,
 
     rel_err = []
 
-    df = DataFrame(columns=['h_p','h_D','h_D increase','relative Error'])
-    df.index.name = 'Iteration'
+    df = DataFrame(columns=['Iteration','h_p','h_D','h_D increase','relative Error'])
+    #df.index.name = 'Iteration'
 
     h1 = 0
 
-    for counter in range(Mmax):
+    if pinfo and __is_called_from_notebook()==False:
+        print('Iteration\t h_p\t\t\t h_D\t\t\t relative error')
+    for counter in range(maxit):
         t,a,r,L,max_div,h,phi = __remez_ex(m,n,l,t,a,r,gamma,samples,reps,prec,rc)
 
-        #max_div = max(max_div,max(abs(gamma(t)**N-phi(t))))
 
 
         #h = __c(t,a,gamma,N).T@r
         rel_err += [float((max_div-h)/abs(h))]
-        df.loc[counter+1] = [float(max_div),float(h),float(h-h1),float((max_div-h)/abs(h))] 
+        df.loc[counter+1] = [counter+1,float(max_div),float(h),float(h-h1),float((max_div-h)/abs(h))] 
         h1 = h
-        if pinfo : 
-            clear_output(wait=True)
+        if pinfo:
+            if __is_called_from_notebook(): 
+            #clear_output(wait=True)
             #print(counter+1,'\t',float(max_div),'\t',float(h),'\t',rel_err[-1])
-            print(df[-10:])
+                print(df[-10:].to_string(index=False))
+                clear_output(wait=True)
+            else:
+                sgn = ['',' '][h>=0]
+                tmp = ''.join([str(counter+1),'\t\t ',f'{float(max_div):.8e}','\t\t ',sgn
+                               ,f'{float(h):.8e}','  \t ',sgn,
+                                f'{float((max_div-h)/h):.8e}'])
+                print(tmp)
         
         
         if rel_err[-1]<prec:
             break
+
 
     t = t/n
     phi1 = phi
@@ -236,6 +261,6 @@ def mpRemez(gamma,N,t=None,a=None,symmetry = 1,rc=False,prec=1e-10,Mmax=100,
         pltplot(range(1,len(rel_err)+1),rel_err)
         yscale('log')
         tight_layout()
-    return t,a,L,max_div,phi
+    return t,a,L,max_div,rel_err[-1]
     
     

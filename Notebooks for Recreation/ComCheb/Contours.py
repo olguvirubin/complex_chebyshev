@@ -22,15 +22,18 @@ def Polygon(N,rad=1,sl=0):
 
 def mpPolygon(N,rad=1,sl=0):
     exp = vectorize(mp.exp)
+    rad = mp.mpf(rad)
+    sl  = mp.mpf(sl)
     if sl>0:
         rad = sl/2/mp.sin(mp.pi/N)
 
     z = rad*exp(2j*mp.pi*array(mp.linspace(0,1,N+1)))
     
     def mpgamma(t):
-        if isinstance(t,(list,ndarray)):
+        if isinstance(t,(list,ndarray,mp.matrix)):
             return array([mpgamma(t) for t in t])
-        t = mp.mpf(t)-int(t)
+        t = mp.mpf(t)
+        t = t - int(t)
         t = N*t
         k = int(t)
         t = t-k
@@ -47,6 +50,8 @@ def Hypocycloid(m=3,r=1):
         return 
     
     def gamma(t):
+        if isinstance(t,(list,)):
+            t = array(t)
         return r*exp(2j*pi*t)+r**(-m+1)*exp(-2j*pi*(m-1)*t)/(m-1)
     return gamma
 
@@ -57,10 +62,13 @@ def mpHypocycloid(m=3,r=1):
     if m<3:
         print('m must be bigger or equal to 3!')
         return 
-    exp = vectorize(mp.exp)
+    r = mp.mpf(r)
     def mpgamma(t):
+        if isinstance(t,(list,ndarray,mp.matrix)):
+            return array([mpgamma(t) for t in t])
+        t = mp.mpf(t)
         t = 2j*mp.pi*t
-        return r*exp(t)+(r*exp(t))**(-m+1)/(m-1)
+        return r*mp.exp(t)+(r*mp.exp(t))**(-m+1)/(m-1)
     return mpgamma
 
 
@@ -69,17 +77,22 @@ def CircLune(a=1,r=1):
         print('a needs to satisfy 0<a<2!')
         return
     def gamma(t):
+        if isinstance(t,(list,)):
+            t = array(t)
         w = r*exp(2j*pi*t)
         return a * (1+ ((w-1)/(w+1))**a)/(1- ((w-1)/(w+1))**a)
     return gamma
 
 def mpCircLune(a=1,r = 1):
+    a,r = mp.mpf(a),mp.mpf(r)
     if a<=0 or a>2:
         print('a needs to satisfy 0<a<2!')
         return
-    exp = vectorize(mp.exp)
     def mpgamma(t):
-        w = r*exp(2j*mp.pi*t)
+        if isinstance(t,(list,ndarray,mp.matrix)):
+            return array([mpgamma(t) for t in t])
+        t = mp.mpf(t)
+        w = r*mp.exp(2j*mp.pi*t)
         return a * (1+ ((w-1)/(w+1))**a)/(1- ((w-1)/(w+1))**a)
     return mpgamma
 
@@ -103,10 +116,11 @@ def Lemniscate(m=2,r=1):
 def mpLemniscate(m=2,r=1):
     r = mp.mpf(r)
     def mpgamma(t):
-        if isinstance(t,(list,ndarray)):
-            return array([mpgamma(mp.mpf(t)) for t in t])
-        t = t-int(t)
-        t = mp.mpf(m*t)
+        if isinstance(t,(list,ndarray,mp.matrix)):
+            return array([mpgamma(t) for t in t])
+        t = mp.mpf(t)
+        t = t - int(t)
+        t = m*t
         k = mp.mpf(int(t))
         t = t+0.5
         if mp.mpf(t-int(t))==mp.mpf(0.5):
@@ -118,12 +132,12 @@ def mpLemniscate(m=2,r=1):
     return mpgamma
 
 
-def mpE3(variant):
+def mpA(variant):
     if variant ==1:
-        def E3v1 (t):
+        def Av1 (t):
             r = 2
             if isinstance(t,(list,ndarray,mp.matrix)):
-                return array([E3v1(t) for t in t])
+                return array([Av1(t) for t in t])
 
             t = mp.mpf(t)
             t = t- int(t)
@@ -145,7 +159,7 @@ def mpE3(variant):
 
             C = e*((27*v+(729*v**2+108)**0.5  )/2)**mp.mpf('1/3')
             return -mp.mpf('1/3')*(C-3/C)
-        return E3v1
+        return Av1
 
     elif variant == 2:
         @mp.memoize
@@ -179,10 +193,10 @@ def mpE3(variant):
 
 
 
-        def E3v2 (t):
+        def Av2 (t):
             r = mp.sqrt('31/27')
             if isinstance(t,(list,ndarray,mp.matrix)):
-                return array([E3v2(t) for t in t])
+                return array([Av2(t) for t in t])
 
             t = mp.mpf(t)
             t = t - int(t)
@@ -211,18 +225,19 @@ def mpE3(variant):
 
             C = e*((27*v+(729*v**2+108)**0.5  )/2)**mp.mpf('1/3')
             return -mp.mpf('1/3')*(C-3/C)
-        return E3v2
+        return Av2
 
     else:
         print('variant needs to be either 1 or 2')
         raise
 
 
-def mpE4(r,maxsteps=1000):
+def mpB(r,maxsteps=1000):
+    r = mp.mpf(r)
 
     @mp.memoize
     def comp_bounds(r):
-        roots = array(mp.polyroots([1,-2,1,0,-r**2/16],maxsteps=maxsteps))
+        roots = array(mp.polyroots([1,-2,1,0,-r**2],maxsteps=maxsteps))
         roots = array([mp.re(root) for  root in roots])
         x1    = min(roots)
         return x1
@@ -230,12 +245,13 @@ def mpE4(r,maxsteps=1000):
     def gamma(t):
         if isinstance(t,(list,ndarray,mp.matrix)):
             return array([gamma(t) for t in t])
-        y1 = lambda x: -(x**2-x+1/2)+mp.sqrt(x**2-x+1/4+r**2/16)
+        y1 = lambda x: -(x**2-x+1/2)+mp.sqrt(x**2-x+1/4+r**2)
         s = lambda x: x+1j*y1(x)**0.5
 
         x1 = comp_bounds(r)
         l = -2*x1+1
         
+        t = mp.mpf(t)
         t = t - int(t)
 
         if t<0:
