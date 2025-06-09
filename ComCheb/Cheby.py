@@ -1,4 +1,5 @@
-from numpy import ndarray,arange
+from numpy import ndarray,arange,array
+from mpmath import matrix
 
 def Cheby(N,L,gamma = None,symmetry =1):
     n = symmetry
@@ -7,7 +8,8 @@ def Cheby(N,L,gamma = None,symmetry =1):
     def phi(z):
         if callable(gamma):
             z = gamma(z)
-        if isinstance(z,(ndarray,)):
+        if isinstance(z,(ndarray,list,matrix)):
+            z  = array(z)
             z1 = z[:,None]
         else:
             z1 = z

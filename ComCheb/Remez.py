@@ -92,7 +92,7 @@ def __remez_ex(m,n,l,t,a,r,gamma,rc):
     
     return t,a,r,L,max_div,phi
 
-def Remez(gamma,N, t=None, a=None,symmetry = 1,rc=False ,prec=1e-10,Mmax=100,plot=True,pinfo=True):
+def Remez(gamma,N, t=None, a=None,symmetry = 1,rc=False ,prec=1e-10,maxit=100,plot=False,pinfo=False):
     '''Performs Tangs algorithm for the given contour.
     Input:
     ------
@@ -108,7 +108,7 @@ def Remez(gamma,N, t=None, a=None,symmetry = 1,rc=False ,prec=1e-10,Mmax=100,plo
         symmetry : integer; describes the symmetry factor. (n-regular polygon has symm. factor of n)
         rc       : bool; (default False) enable this setting if the coefficients are real. (speed up)
         prec     : float; wanted threshold for tangs algorithm.
-        Mmax     : integer; number of maximum iterations.
+        maxit    : integer; number of maximum iterations.
         plot     : bool; if True (default), then the chebyshev polynomial as well as the
                    relative error (for Tang's algorithm) is plotted.
         pinfo    : bool; short for print info. If True (default) then in each iteration most
@@ -121,7 +121,7 @@ def Remez(gamma,N, t=None, a=None,symmetry = 1,rc=False ,prec=1e-10,Mmax=100,plo
         L        : 1D numpy array; cofficients of the polynomial Qm given by T_N(z)=z^lQm(z^n),
                    while T_N describes the Chebyshev polynomial of order N = nm+l.
         max_div  : float; maximum deviation of final approximation.
-        phi      : function; best order N-1 Chebyshev approxiamtion of z^N.
+        rel_err  : float; relative error w.r.t. Tang's algorithm.
     '''
     if type(N)==type(t)==type(a)==type(None):
         print("'n','t','a' must not all be 'None'!")
@@ -158,21 +158,28 @@ def Remez(gamma,N, t=None, a=None,symmetry = 1,rc=False ,prec=1e-10,Mmax=100,plo
 
     rel_err = []
 
-    for counter in range(Mmax):
+    if pinfo:
+        print('Iteration\t h_p\t\t\t h_D\t\t\t relative error')
+        clear = 0
+    for counter in range(maxit):
         t,a,r,L,max_div,phi = __remez_ex(m,n,l,t,a,r,gamma,rc)
-        max_div = max(max_div,max(abs(gamma(t)**N-phi(t))))
+        #max_div = max(max_div,max(abs(gamma(t)**N-phi(t))))
 
         h = __c(t,a,gamma,N).T@r
         if pinfo:
-            clear_output(wait=True)
-            print('Iteration\t h_p\t\t\t h_D\t\t\t relative error')
-            print(counter+1,'\t\t',f'{max_div:.8e}','\t',f'{h:.8e}','\t',
-                  f'{(max_div-h)/h:.8e}')
+            #clear_output(wait=True)
+            tmp = ''.join([str(counter+1),'\t\t ',f'{max_div:.8e}','\t\t ',f'{h:.8e}','\t\t ',
+                  f'{(max_div-h)/h:.8e}'])
+            #print(clear*'      ',end='\r')
+            #print(tmp,end='\r')
+            print(tmp)
+            #clear = len(tmp)
         
         rel_err += [abs(max_div-h)/abs(h)]
         if rel_err[-1]<prec:
             break
-    
+    if pinfo:
+        print('\n')
     t = t/n
     phi1 = phi
     phi  = lambda t: phi1(n*t)
@@ -189,6 +196,6 @@ def Remez(gamma,N, t=None, a=None,symmetry = 1,rc=False ,prec=1e-10,Mmax=100,plo
         pltplot(range(1,len(rel_err)+1),rel_err)
         yscale('log')
         tight_layout()
-    return t,a,L,max_div,phi
+    return t,a,L,max_div,rel_err[-1]
     
     
