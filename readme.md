@@ -3,25 +3,48 @@ This repository provides the Python library `ComCheb` for computing complex Cheb
 To facilitate experimentation, the library also includes a collection of sample contours, all of which are presented and studied in [1]. The library includes two complementary implementations: one based on NumPy for fast and efficient double-precision computations, and another using mpmath, which supports arbitrary-precision arithmetic for high-accuracy calculations and validation.
 This project is intended for researchers, students, and practitioners working in numerical analysis, complex approximation, and computational mathematics.
 
-Let us clarify the terminology and present the general problem addressed by this project. Given any compact set $K\subset \mathbb C$ we define the Chebyshev norm as $\|f\|_{K,\infty}:=\sup_{z\in K}|f(z)|$. Assume that $K$ consists of infinitely many points, we then define the $n$-th Chebyshev polynomial to be the unique minimizer
+Let us clarify the terminology and present the general problem addressed by this project. Given any compact set $K\subset \mathbb C$ we define the Chebyshev norm as  
+```math
+\|f\| _{K,\infty}:=\sup _{z\in K}|f(z)|.
+```
+
+Assume that $K$ consists of infinitely many points, we then define the $n$-th Chebyshev polynomial to be the unique minimizer
 of
-$$\underset{p\in M_n}{\mathrm{minimize}}\ \ \|p\|_{K,\infty} \tag{1}, $$
+```math
+\underset{p\in M_n}{\mathrm{minimize}}\ \ \|p\|_{K,\infty},
+```
+
 where $M_n$ denotes the set of all complex monic polynomials of degree $n$. The aim of the project is to compute the Chebyshev polynomials in the special case where $K$ is either a contour or a domain whose boundary can be described by a contour. It is worth mentioning that the latter case can be reduced to the former, as polynomials are entire functions and therefore obtain their absolute maximum at the boundary of the given domain. In order to be precise, we define a contour $\Gamma$ to be the image of a continuous function $\gamma :[0,1]\to\mathbb C$.
 
 
 The computational approach provided by this project follows the algorithm introduced by P.T.P. Tang [2], which was further refined by B. Fischer and J. Modersitzki in [3]. The procedure designed by Tang can be interpreted as a complex variant of the Remez algorithm, which computes the best uniform polynomial approximation for a given continuous function on any finite interval. Although Tang's algorithm is applicable in a more general context (i.e. computing best polynomial approximations of arbitrary continuous functions) this library is confined to the special case of computing the Chebyshev polynomials for any given contour. 
 
-Now let us briefly break down the key concepts of Tang's algorithm (for a more detailed description see [2,3]). The procedure exploits a dual representation of (1). In fact, let the contour $\Gamma$ be characterized by $\gamma:[0,1]\to\mathbb C$, then it holds that
-$$ 
-\min_{p\in M_n}\|p\|_{\Gamma,\infty} = \max_{\substack{\mathbf{\alpha}\in [0,2\pi)^{2n+1} \\ \mathbf t\in[0,1]^{2n+1}}}\left|\sum_{j=1}^{2n+1}r_j(\mathbf t,\mathbf \alpha) \mathrm{Re} \left( e^{-i\alpha_j}\gamma^n(t_j)\right)\right|=:\max_{\substack{\mathbf{\alpha}\in [0,2\pi)^{2n+1} \\ \mathbf t\in[0,1]^{2n+1}}} h(\mathbf t,\mathbf \alpha),\tag{2}
-$$
-where $r(\mathbf t,\mathbf \alpha)$ is chosen to satisfy
+Now let us briefly break down the key concepts of Tang's algorithm (for a more detailed description see [2,3]). The procedure exploits a dual representation of our minimization problem. In fact, let the contour $\Gamma$ be characterized by $\gamma:[0,1]\to\mathbb C$, then it holds that
+
+```math
+ \min _{p\in M _n} \|p\| _{\Gamma,\infty} = \max _{\mathbf{\alpha}\in[0,2\pi)^{2n+1}, \mathbf t\in[0,1]^{2n+1}} \left| \sum _{j=1} ^{2n+1}r _j(\mathbf t,\mathbf \alpha) \mathrm{Re} \left( e^{-i\alpha _j}\gamma^n(t _j)\right) \right|=:\max _{\mathbf{\alpha}\in [0,2\pi)^{2n+1}, \mathbf t\in[0,1]^{2n+1}} h(\mathbf t,\mathbf \alpha),
+```
+
+
+where $`r(\mathbf t,\mathbf \alpha)`$ is chosen to satisfy
+
 $$\sum_{j=1}^{2n+1}r_j(\mathbf t,\mathbf \alpha)  = 1 ,\quad \text{ and }\quad\sum_{j=1}^{2n+1}r_j(\mathbf t,\mathbf \alpha) \mathrm{Re} \left( e^{-i\alpha_j}\gamma^k(t_j)\right)=0,\quad k=0,1,\dots,n-1.$$
-Writing this in terms of matrices we have $A(\mathbf t,\mathbf \alpha)r =(1,0,\dots,0)\in\mathbb R^{2n+1}$ for some $\mathbf t$ and $\mathbf \alpha$ depending matrix $A(\mathbf t,\mathbf \alpha)$. Instead of solving (1) we aim to solve the right-hand side of (2), and recreate the $n$-th Chebyshev  polynomial $T_n^\Gamma$  from the optimal parameters $\mathbf t^*$ and $\mathbf \alpha^*$. If $\mathbb A$ denotes the set of all pairs $(\mathbf t,\mathbf \alpha)\in [0,1]^{2n+1}\times[0,2\pi)^{2n+1}$ such that $A(\mathbf t,\mathbf \alpha)$ is invertible, then there is a known continuous mapping $\colon \mathbb A \to M_n$, $(\mathbf t,\mathbf \alpha)\mapsto p_{\mathbf t,\mathbf\alpha}$ such that $ p_{\mathbf t*,\mathbf\alpha^*}=T_n^\Gamma$. Hence it remains to solve the right hand side of (2). Similar to the classical Remez algorithm, Tang's algorithm solves (2) in an iterative manner. The algorithm constructs a sequence of parameter pairs $(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})$ such that $h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})$ is increasing in $\nu$. This sequence usually converges fast towards the unique solution $(\mathbf t^*,\mathbf \alpha^*)$. This iterative routine will be executed until $h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})$ is positive and
-$$ \frac{\| p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}  \|_{\Gamma,\infty}-h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})}{h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})}<\varepsilon \tag{3} $$
-for any predefined accuracy level $\varepsilon>0$. Once (3) is achieved, the polynomial $p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}$ is guaranteed to satisfy
-$$ \frac{\| p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}\|_{\Gamma,\infty}-\|T_n\|_{\Gamma,\infty}}{\|T_n\|_{\Gamma,\infty}}<\varepsilon, \tag{4}$$
-hence roughly the first $-\log_{10}(\varepsilon)$ digits of $\| p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}\|_{\Gamma,\infty}$ coincide with those of $\|T_n\|_{\Gamma,\infty}$. 
+
+Writing this in terms of matrices we have $A(\mathbf t,\mathbf \alpha)r =(1,0,\dots,0)\in\mathbb R^{2n+1}$ for some $\mathbf t$ and $\mathbf \alpha$ depending matrix $A(\mathbf t,\mathbf \alpha)$. Instead of solving the initial minimization problem we aim to solve the right-hand side of the dual, and recreate the $n$-th Chebyshev  polynomial $T_n^\Gamma$  from the optimal parameters $\mathbf t^\*$ and $\mathbf \alpha^\*$. If $\mathbb A$ denotes the set of all pairs $(\mathbf t,\mathbf \alpha)\in [0,1]^{2n+1}\times[0,2\pi)^{2n+1}$ such that $A(\mathbf t,\mathbf \alpha)$ is invertible, then there is a known continuous mapping $\colon \mathbb A \to M_n$, $(\mathbf t,\mathbf \alpha)\mapsto p_{\mathbf t,\mathbf\alpha}$ such that $`p _{\mathbf t^*,\mathbf\alpha^*}=T _n^\Gamma`$. Hence it remains to solve the maximizing problem. Similar to the classical Remez algorithm, Tang's algorithm solves this in an iterative manner. The algorithm constructs a sequence of parameter pairs $`(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})`$ such that $h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})$ is increasing in $\nu$. This sequence usually converges fast towards the unique solution $`(\mathbf t^*,\mathbf \alpha^*)`$. This iterative routine will be executed until $h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})$ is positive and
+
+```math
+ \frac{\| p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}  \| _{\Gamma,\infty}-h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})}{h(\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)})}<\varepsilon
+```
+
+for any predefined accuracy level $\varepsilon>0$. Once the estimate above is achieved, the polynomial $p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}$ is guaranteed to satisfy
+
+```math
+\frac{\| p_{\mathbf t^{(\nu)} ,\mathbf \alpha^{(\nu)}} \|_{\Gamma,\infty} -\|T _n \| _{\Gamma,\infty}}{
+\| T _n \| _{\Gamma,\infty}}<\varepsilon
+```
+
+
+hence roughly the first $`-\log_{10}(\varepsilon)`$ digits of $`\| p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}\|_{\Gamma,\infty}`$ coincide with those of $`\|T_n\|_{\Gamma,\infty}`$. 
 
 
 
@@ -113,7 +136,9 @@ The `mpmath` version works analogously. To obtain accurate results, make sure th
 
 ### Hypocycloids
 The functions `Hypocycloid` and `mpHypocycloid` will return a parameterization of the regular $m$-cusped Hypocycloid. The $m$-Hypocycloid is given by the contour
-$$ \mathsf{H}_m^r:= \left\{ re^{2 \pi i\theta}+ \frac{(re)^{-2\pi i(m-1)\theta}}{m-1}\ :\ \theta \in [0,1) \right\}.$$
+```math
+ \mathsf{H}_m^r:= \left\{ re^{2 \pi i\theta}+ \frac{(re)^{-2\pi i(m-1)\theta}}{m-1}\ :\ \theta \in [0,1) \right\}.
+```
 By default `r=1` is used.
 
 ```python
@@ -144,8 +169,10 @@ Analogously for the `mpmath` variant. Again, make sure to use proper input types
  (-0.774691358024691358024691358024 + 1.25627141907001902462638855017j)]
 ```  
 ### Circular Lunes
-The functions `CircLune` and `mpCircLune` will return a parameterization for the $\alpha$-circular lune. The $\alpha$-circular lune is given by 
-$$ \mathsf{C}_\alpha^r:= \left\{ \alpha \frac{1+\left(\frac{w-1}{w+1}\right)^\alpha}{1-\left(\frac{w-1}{w+1} \right)^\alpha}\ :\ |w| = r \right\}.$$
+The functions `CircLune` and `mpCircLune` will return a parameterization for the $\alpha$-circular lune. The $\alpha$-circular lune is given by
+```math
+\mathsf{C}_\alpha^r:= \left\{ \alpha \frac{1+\left(\frac{w-1}{w+1}\right)^\alpha}{1-\left(\frac{w-1}{w+1} \right)^\alpha}\ :\ |w| = r \right\}.
+```
 By default `r=1` is used, the value $\alpha$ my be chosen from the interval $(0,2]$.
 
 ```python
@@ -178,7 +205,9 @@ Analogously for the `mpmath` variant. Again, make sure to use proper input types
 
 ### Lemniscates
 The functions `Lemniscate` and `mpLemniscate` will return a parameterization for the family of lemniscates given by
-$$\mathsf{L}_m^r :=\left\{z\ : \ \left| z^m-1 \right| =r^m\right\},$$
+```math
+\mathsf{L}_m^r :=\left\{ z\ : \ | z^m-1 | =r^m\right\}
+```
 by default `r=1` is used.
 
 ```python
@@ -210,7 +239,9 @@ Analogously for the `mpmath` variant. Again, make sure to use proper input types
 ```  
 ### Special A
 The function `mpA` provides a parameterization for the special Lemniscate
-$$\mathsf A^r:= \left\{z\ :\ \left|z^3+z+1 \right|=r \right\}.$$
+```math
+\mathsf A^r:= \left\{z\ :\ \left|z^3+z+1 \right|=r \right\}.
+```
 Currently, only the `mpmath` version is implemented and only for the two values `r=2` and `r=(31/27)**0.5`, these two variants can be accessed by `mpA(1)` and `mpA(2)`, respectively.
 
 ```python
@@ -230,7 +261,9 @@ Currently, only the `mpmath` version is implemented and only for the two values 
 ```  
 ### Special B
 The function `mpB` provides a parameterization for the special Lemniscate
-$$\mathsf B^r:= \left\{z\ :\ \left|z^4-z^2 \right|=r \right\}.$$
+```math
+\mathsf B^r:= \left\{z\ :\ \left|z^4-z^2 \right|=r \right\}.
+```
 Currently, only the `mpmath` version is implemented. Note that this function also offers the optional input `maxsteps`, which corresponds to a root finding process within the construction of this contour. If it happens that initialization fails, this value has to be increased. The default value is `maxsteps = 1000`.
 
 ```python
@@ -248,7 +281,9 @@ Currently, only the `mpmath` version is implemented. Note that this function als
 The functions `Remez` and `mpRemez` call Tang's adaptation of the Remez algorithm. This algorithm computes the Chebyshev polynomial for any given continuous contour. Both variants work essentially the same, although `mpRemez` offers more optional arguments. 
 
 Note that these computations, especially in high-precision, are very expensive. To optimize efficiency we can exploit symmetries of the given contour. In fact, if the contour $\Gamma$ is conjugate symmetric, that is $z \in \Gamma$ whenever $\overline z\in\Gamma$, then coefficients of the $n$-th Chebyshev polynomial $T_n$ are real. Further, if $\Gamma$ is $m$-rotational symmetric, that means that if $z\in\Gamma$ so are $e^{2\pi ik/m} z$ for $k=1,\dots,m-1$, then $T_n$ is of the form
-$$T_n(z)= z^\ell Q_k(z^m) \tag{5}$$
+```math
+T_n(z)= z^\ell Q_k(z^m)
+```
 for $n=km+\ell$ and some monic polynomial $Q_k$ of degree $k$ see Lemma 3.1 of [1]. Thus, it is sufficient to use Tang's algorithm to find the polynomial $Q_k$ instead of $T_n$, which significantly speeds up the calculation. In the following, $m$ will denote the rotational symmetric constant.
 
 Both Remez implementation offer the following input data:   
@@ -259,21 +294,21 @@ Further, these optional settings are available.
 - `a` : an array of $2k+1$ points in $[0,2\pi)$. The default is `None`, in this case random values are used. The array `a` will be used as initial parameter for $\mathbf \alpha^{(0)}$ according to Section 1.
 - `rc` : a boolean, default is `False`. It is short for 'real coefficients'. Set this to  `True`, whenever $\Gamma$ is conjugate symmetric.
 - `symmetry` : integer. This value defines the rotational symmetry $m$. Use this, whenever $\Gamma$ is $m$-rotational symmtric. This setting greatly improves the performance.
-- `prec` : an float (default 1e-10). This defines the wanted accuracy according to (3) and (4).
+- `prec` : an float (default 1e-10). This defines the wanted accuracy according the error estimate presented in Section 1.
 - `maxit` : integer, determines the maximum number of iterations for the Remez routine.
-- `plot` : bool (default `False`). If `True`, then a plot will be created showing on the left the absolute value of the computed Chebyshev polynomial and on the right the relative error according to (3) with respect to the iteration number.
+- `plot` : bool (default `False`). If `True`, then a plot will be created showing on the left the absolute value of the computed Chebyshev polynomial and on the right the relative error as presented in Section 1 with respect to the iteration number.
 - `pinfo`: bool (default `False`). This is short for 'print info'. If set to `True` then additional information are printed while the Remez routine is running. Within the printed data `h_p` refers to $\|p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}\|_{\Gamma,\infty}$ and `h_D` denotes the value for $h(\mathbf t^{(\nu)},\mathbf \alpha ^{(\nu)})$, both with respect to the notation in Section 1.
 
 Furthermore, the routine `mpRemez` offers the additional parameters `samples` (integer with default `1001`) and `reps` (integer with default `10`). These are used for determining the maximum of $|p_{\mathbf t^{(\nu)},\mathbf \alpha^{(\nu)}}\circ \gamma|$.  We first discretise [0,1] at `samples`-many equidistant points $\{x_0,\dots\}$, then we take the value $x_k$ for which the given function is maximal. We refine the the approximate maximum $x_k$ by discretizing $[x_{k-1},x_{k+1}]$ into 201 equidistant points. We repeat this refining process `reps`-times. It is suggested to set `reps`$\approx-\log_{10}($`prec`) to ensure an accurate result.
 
 Both Remez routines will provide the following output:
-- `t` : numpy array containing the reference points $\mathbf t \in [0,1]^{2k+1}$ according to Section 1 applied to the function $Q_k$ as in (5).
-- `a` : numpy array containing the angles $\mathbf \alpha \in [0,2\pi)^{2k+1}$ according to Section 1 applied to the  function $Q_k$ as in (5).
-- `L` : numpy array containing the coefficients of $Q_k$ as in (5).
+- `t` : numpy array containing the reference points $\mathbf t \in [0,1]^{2k+1}$ according to Section 1 applied to the function $Q_k$ as given above.
+- `a` : numpy array containing the angles $\mathbf \alpha \in [0,2\pi)^{2k+1}$ according to Section 1 applied to the  function $Q_k$ as as given above.
+- `L` : numpy array containing the coefficients of $Q_k$ as given above.
 - `max_div` : `float` or `mp.mpf` containing the Chebyshev norm of the determined polynomial.
-- `rel_err` : `float` or `mp.mpf` describing the achieved relative error according to (3) and (4).
+- `rel_err` : `float` or `mp.mpf` describing the achieved relative error as presented in Section 1.
 
-Note, if one wants to evaluate the determined Chebyshev polynomial, it has to be reconstructed using (5). Since the returned coefficients are given with respect to $Q_k$ and not the Chebyshev polynomial $T_n$. The easiest way to do so is to invoke the function `Cheby` described later.
+Note, if one wants to evaluate the determined Chebyshev polynomial, it has to be reconstructed using the relation $T_n(z)= z^\ell Q_k(z^m)$. Since the returned coefficients are given with respect to $Q_k$ and not the Chebyshev polynomial $T_n$. The easiest way to do so is to invoke the function `Cheby` described later.
 
 ```python
 >>> import numpy as np
@@ -318,7 +353,7 @@ Iteration        h_p                     h_D                     relative error
 8                1.85323052e-01           1.85323052e-01          1.32499951e-34
 ```
 ## Chebyshev Evaluation
-Using the function `Cheby` we obtain an executable function which evaluates the Chebyshev polynomial computed by `Remez` or `mpRemez` according to (5), hence it is necessary to feed the coefficients of $Q_k$, the degree of $n$ of the Chebyshev polynomial as well as the symmetry constant $m$. The function `Cheby` offers the opportunity to either determine only the Chebyshev polynomial $T_n$ or to automatically include the given contour, that means it will compute $T_n\circ \gamma$, while $\gamma$ is a parameterization of the contour. The constructed function is able to handle scalar inputs as well as one-dimensional lists, numpy arrays or mpmath matrices.
+Using the function `Cheby` we obtain an executable function which evaluates the Chebyshev polynomial computed by `Remez` or `mpRemez` according to the decomposition $T_n(z)= z^\ell Q_k(z^m)$, hence it is necessary to feed the coefficients of $Q_k$, the degree of $n$ of the Chebyshev polynomial as well as the symmetry constant $m$. The function `Cheby` offers the opportunity to either determine only the Chebyshev polynomial $T_n$ or to automatically include the given contour, that means it will compute $T_n\circ \gamma$, while $\gamma$ is a parameterization of the contour. The constructed function is able to handle scalar inputs as well as one-dimensional lists, numpy arrays or mpmath matrices.
 
 ```python
 >>> import ComCheb as CC
@@ -338,7 +373,7 @@ array([0.16867764+7.28032249e-02j, 0.18532305-5.85088766e-16j])
 ```
 
 ## Roots
-The function `Roots` compute the roots of the Chebyshev polynomial $T_n$, while the input is given according to (5), thus it needs the coefficients of $Q_k$, the order $n$ as well as the symmetry constant $m$. This routine automatically distinguishes between `numpy` and `mpmath` inputs.
+The function `Roots` compute the roots of the Chebyshev polynomial $T_n$, while the input is given according to the decomposition $T_n(z)= z^\ell Q_k(z^m)$, thus it needs the coefficients of $Q_k$, the order $n$ as well as the symmetry constant $m$. This routine automatically distinguishes between `numpy` and `mpmath` inputs.
 
 ```python
 >>> import ComCheb as CC
