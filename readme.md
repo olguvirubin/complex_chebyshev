@@ -80,7 +80,7 @@ The jupyter notebooks contain all the relevant code to fully recreate the result
 All the notebooks named above will store all relevant information within the data folder, while using the `pickle` format. Finally, the notebook `Results` accesses the data folder and binds all results together, creating all tables and Figures displayed in [1].
 
 ## References
-[1] L. A. Hübner – O. Rubin. *Computing Chebyshev polynomials using the complex Remez algorithm*. Experimental Mathematics *(to appear)*
+[1] L. A. Hübner – O. Rubin. *Computing Chebyshev polynomials using the complex Remez algorithm*. Experimental Mathematics *(to appear)*    
 [2] P. T. P. Tang. *Chebyshev approximation on the complex plane*. University of California, Berkeley, 1987.  
 [3] B. Fischer and Jan Modersitzki. *An algorithm for complex linear approximation based on semi-infinite programming*. Numerical Algorithms, vol. 5, pp. 287–297, 1993.
 
@@ -413,3 +413,4 @@ array([(0.569811814174935659510738182485 + 0.0j),
        (-2.4001183422874809410723428043e-31 - 0.943617707760627741262321245246j),
        0, 0], dtype=object)
 ```
+
